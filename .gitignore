@@ -1,0 +1,6 @@
+/sekidp-ctk
+/bin/
+*.junit.xml
+results.json
+*-report.html
+.DS_Store

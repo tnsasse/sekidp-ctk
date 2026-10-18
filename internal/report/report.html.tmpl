@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --border: #dde1e7;
+  --text: #1b1f24; --muted: #5d6673; --accent: #3b5bdb;
+  --pass: #2b8a3e; --pass-bg: #e6f4ea; --warn: #b35c00; --warn-bg: #fff3e0;
+  --fail: #c92a2a; --fail-bg: #fdecec; --error: #862e9c; --error-bg: #f6e8fa;
+  --skip: #6b7280; --skip-bg: #eef0f3; --code-bg: #f3f4f6;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1216; --surface: #171b21; --surface-2: #1e232b; --border: #2b313b;
+    --text: #e6e9ee; --muted: #9aa4b2; --accent: #8ea2ff;
+    --pass: #69db7c; --pass-bg: #16301e; --warn: #ffb057; --warn-bg: #33240f;
+    --fail: #ff8787; --fail-bg: #3a1a1c; --error: #e599f7; --error-bg: #2f1a36;
+    --skip: #9aa4b2; --skip-bg: #23282f; --code-bg: #12161b;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -.01em; }
+h2 { font-size: 18px; margin: 40px 0 12px; }
+.muted { color: var(--muted); }
+code, pre, .mono { font-family: var(--mono); font-size: 12.5px; }
+header { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between; }
+.meta { color: var(--muted); font-size: 13.5px; }
+.verdict { padding: 10px 16px; border-radius: 10px; font-weight: 650; letter-spacing: .02em; }
+.verdict.ok { background: var(--pass-bg); color: var(--pass); }
+.verdict.bad { background: var(--fail-bg); color: var(--fail); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 24px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+.card .n { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.card .l { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+.c-pass .n { color: var(--pass); } .c-warn .n { color: var(--warn); } .c-fail .n { color: var(--fail); }
+.c-error .n { color: var(--error); } .c-skip .n { color: var(--skip); }
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--surface-2); font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--skip-bg); min-width: 120px; margin-top: 6px; }
+.bar span { display: block; height: 100%; }
+.pill { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .04em; white-space: nowrap; }
+.s-pass { background: var(--pass-bg); color: var(--pass); } .s-warn { background: var(--warn-bg); color: var(--warn); }
+.s-fail { background: var(--fail-bg); color: var(--fail); } .s-error { background: var(--error-bg); color: var(--error); }
+.s-skip { background: var(--skip-bg); color: var(--skip); }
+.sec { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--fail); border-radius: 10px; padding: 16px 18px; margin: 12px 0; box-shadow: var(--shadow); }
+.finding.warn { border-left-color: var(--warn); } .finding.error { border-left-color: var(--error); }
+.finding h3 { margin: 0; font-size: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.finding h3 .id { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 650; margin: 14px 0 4px; }
+.expect { margin: 0; }
+ul.obs { list-style: none; padding: 0; margin: 0; }
+ul.obs li { padding: 6px 10px; background: var(--surface-2); border-radius: 6px; margin: 4px 0; overflow-wrap: anywhere; }
+.lvl { font-family: var(--mono); font-size: 11px; font-weight: 700; margin-right: 6px; }
+.lvl.MUST { color: var(--fail); } .lvl.SHOULD { color: var(--warn); }
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--accent); font-size: 13.5px; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.ex { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 760px) { .ex { grid-template-columns: 1fr; } }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+.toolbar button { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.toolbar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.toolbar input, .toolbar select { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.toolbar input { flex: 1; min-width: 180px; }
+tr.row { cursor: pointer; }
+tr.row:hover td { background: var(--surface-2); }
+tr.detail td { background: var(--surface-2); }
+.empty { padding: 24px; text-align: center; color: var(--muted); }
+.ok-mark { color: var(--pass); } .bad-mark { color: var(--fail); }
+footer { margin-top: 48px; color: var(--muted); font-size: 12.5px; }
+@media print { .toolbar, details summary { display: none; } details { display: block; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 id="heading">Conformance report</h1>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="verdict" id="verdict"></div>
+  </header>
+
+  <div class="cards" id="cards"></div>
+
+  <h2>By specification</h2>
+  <table id="specs"><thead><tr><th>Specification</th><th class="num">Tests</th><th class="num">Passed</th><th class="num">Warnings</th><th class="num">Failed</th><th class="num">Errors</th><th class="num">Skipped</th></tr></thead><tbody></tbody></table>
+
+  <h2 id="findings-title">Findings</h2>
+  <p class="muted" id="findings-intro"></p>
+  <div id="findings"></div>
+
+  <h2>All results</h2>
+  <div class="toolbar" id="toolbar"></div>
+  <table id="results"><thead><tr><th>Status</th><th>ID</th><th>Test</th><th>Section</th></tr></thead><tbody></tbody></table>
+
+  <footer>Generated by sekidp-ctk. Recorded HTTP exchanges have passwords, client secrets, cookies and Authorization headers redacted; tokens in response bodies are not.</footer>
+</main>
+<script id="data" type="application/json">{{.Data}}</script>
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("data").textContent);
+  var sum = data.summary, results = sum.results || [];
+  var STATUS = ["pass", "warn", "fail", "error", "skip"];
+  var LABEL = { pass: "PASS", warn: "WARN", fail: "FAIL", error: "ERROR", skip: "SKIP" };
+  var NAME = { pass: "Passed", warn: "Warnings", fail: "Failed", error: "Errors", skip: "Skipped" };
+  var COLOR = { pass: "var(--pass)", warn: "var(--warn)", fail: "var(--fail)", error: "var(--error)", skip: "var(--skip)" };
+
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "text") e.textContent = attrs[k];
+      else if (k === "class") e.className = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(function (c) { if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function isRFC(spec) { return /^[0-9]+$/.test(spec); }
+  function specLabel(spec) { return isRFC(spec) ? "RFC " + spec : spec; }
+  function fmtSection(spec, section) {
+    var i = section.indexOf("/");
+    if (i >= 0) { spec = section.slice(0, i); section = section.slice(i + 1); }
+    spec = spec || "6749";
+    return isRFC(spec) ? "RFC " + spec + " §" + section : spec + " " + section;
+  }
+  function pill(st) { return el("span", { "class": "pill s-" + st, text: LABEL[st] }); }
+  function fmtDuration(ns) {
+    var ms = ns / 1e6;
+    if (ms < 1000) return Math.round(ms) + " ms";
+    var s = ms / 1000;
+    return s < 60 ? s.toFixed(1) + " s" : Math.floor(s / 60) + " min " + Math.round(s % 60) + " s";
+  }
+
+  // Header.
+  if (sum.title) document.getElementById("heading").textContent = sum.title;
+  document.getElementById("meta").textContent =
+    sum.target + " · " + new Date(sum.started).toLocaleString() + " · " + fmtDuration(sum.duration_ns) +
+    (sum.strict ? " · strict mode" : "");
+  var v = document.getElementById("verdict");
+  v.textContent = data.failed ? "NOT CONFORMANT" : "CONFORMANT";
+  v.className = "verdict " + (data.failed ? "bad" : "ok");
+
+  // Cards.
+  var cards = document.getElementById("cards");
+  cards.appendChild(el("div", { "class": "card" }, [el("div", { "class": "n", text: String(results.length) }), el("div", { "class": "l", text: "Tests" })]));
+  STATUS.forEach(function (st) {
+    cards.appendChild(el("div", { "class": "card c-" + st }, [
+      el("div", { "class": "n", text: String(sum.counts[st] || 0) }), el("div", { "class": "l", text: NAME[st] })]));
+  });
+
+  // Per-spec table.
+  var specs = Object.keys(sum.counts_by_spec || {}).sort();
+  var tbody = document.querySelector("#specs tbody");
+  specs.forEach(function (sp) {
+    var c = sum.counts_by_spec[sp], total = 0;
+    STATUS.forEach(function (st) { total += c[st] || 0; });
+    var bar = el("div", { "class": "bar", title: STATUS.map(function (st) { return NAME[st] + ": " + (c[st] || 0); }).join(", ") });
+    STATUS.forEach(function (st) {
+      if (c[st]) bar.appendChild(el("span", { style: "width:" + (100 * c[st] / total) + "%;background:" + COLOR[st] }));
+    });
+    var row = el("tr", null, [
+      el("td", null, [el("strong", { text: specLabel(sp) }), " ", el("span", { "class": "muted", text: data.specNames[sp] || "" }), bar]),
+      el("td", { "class": "num", text: String(total) })]);
+    STATUS.forEach(function (st) { row.appendChild(el("td", { "class": "num", text: String(c[st] || 0) })); });
+    tbody.appendChild(row);
+  });
+
+  function evidence(r, open) {
+    if (!(r.logs && r.logs.length) && !(r.exchanges && r.exchanges.length)) return null;
+    var d = el("details", open ? { open: "" } : null, [el("summary", { text: "Evidence: " + (r.exchanges ? r.exchanges.length : 0) + " HTTP exchange(s)" })]);
+    (r.logs || []).forEach(function (l) { d.appendChild(el("div", { "class": "muted mono", text: "· " + l })); });
+    (r.exchanges || []).forEach(function (x, i) {
+      d.appendChild(el("div", { "class": "label", text: "Exchange " + (i + 1) }));
+      d.appendChild(el("div", { "class": "ex" }, [el("pre", { text: x.request }), el("pre", { text: x.response })]));
+    });
+    return d;
+  }
+
+  // Findings.
+  var findings = document.getElementById("findings");
+  var order = ["fail", "error", "warn"], nf = 0;
+  order.forEach(function (st) {
+    results.filter(function (r) { return r.status === st; }).forEach(function (r) {
+      nf++;
+      var card = el("article", { "class": "finding " + st, id: "f-" + r.id }, [
+        el("h3", null, [pill(st), el("span", { "class": "id", text: r.id }), el("span", { text: r.title }),
+          el("span", { "class": "sec", text: fmtSection(r.spec, r.section) })])]);
+      if (r.expect) {
+        card.appendChild(el("div", { "class": "label", text: "What the specification expects" }));
+        card.appendChild(el("p", { "class": "expect", text: r.expect }));
+      }
+      card.appendChild(el("div", { "class": "label", text: "What the implementation did" }));
+      var ul = el("ul", { "class": "obs" });
+      if (st === "error") ul.appendChild(el("li", { text: "Could not be evaluated: " + r.reason }));
+      (r.assertions || []).filter(function (a) { return !a.ok; }).forEach(function (a) {
+        ul.appendChild(el("li", null, [el("span", { "class": "lvl " + a.level, text: a.level }),
+          el("span", { "class": "sec", text: fmtSection("", a.section) }), " ", a.message]));
+      });
+      card.appendChild(ul);
+      var ev = evidence(r, false);
+      if (ev) card.appendChild(ev);
+      findings.appendChild(card);
+    });
+  });
+  document.getElementById("findings-intro").textContent = nf === 0
+    ? "No findings: every test that ran passed."
+    : nf + " test(s) need attention. Failed means a MUST requirement is violated, warnings are SHOULD-level, errors could not be evaluated.";
+
+  // Results table with filters.
+  var active = { pass: true, warn: true, fail: true, error: true, skip: true }, spec = "", query = "";
+  var toolbar = document.getElementById("toolbar");
+  STATUS.forEach(function (st) {
+    var b = el("button", { type: "button", "aria-pressed": "true", text: NAME[st] + " (" + (sum.counts[st] || 0) + ")" });
+    b.addEventListener("click", function () { active[st] = !active[st]; b.setAttribute("aria-pressed", String(active[st])); render(); });
+    toolbar.appendChild(b);
+  });
+  var sel = el("select", { "aria-label": "Specification" }, [el("option", { value: "", text: "All specifications" })]);
+  specs.forEach(function (sp) { sel.appendChild(el("option", { value: sp, text: specLabel(sp) })); });
+  sel.addEventListener("change", function () { spec = sel.value; render(); });
+  var search = el("input", { type: "search", placeholder: "Search ID, title, message…", "aria-label": "Search" });
+  search.addEventListener("input", function () { query = search.value.toLowerCase(); render(); });
+  toolbar.appendChild(sel); toolbar.appendChild(search);
+
+  var rbody = document.querySelector("#results tbody");
+  function matches(r) {
+    if (!active[r.status] || (spec && r.spec !== spec)) return false;
+    if (!query) return true;
+    var hay = [r.id, r.title, r.expect, r.reason].concat((r.assertions || []).map(function (a) { return a.message; })).join(" ").toLowerCase();
+    return hay.indexOf(query) >= 0;
+  }
+  function render() {
+    rbody.textContent = "";
+    var shown = 0;
+    results.forEach(function (r) {
+      if (!matches(r)) return;
+      shown++;
+      var row = el("tr", { "class": "row" }, [el("td", null, [pill(r.status)]), el("td", { "class": "mono", text: r.id }),
+        el("td", { text: r.title }), el("td", { "class": "sec", text: fmtSection(r.spec, r.section) })]);
+      var detail = null;
+      row.addEventListener("click", function () {
+        if (detail) { detail.remove(); detail = null; return; }
+        var box = el("div");
+        if (r.expect) box.appendChild(el("p", { "class": "expect", text: r.expect }));
+        if (r.reason) box.appendChild(el("p", { "class": "muted", text: "Reason: " + r.reason }));
+        var ul = el("ul", { "class": "obs" });
+        (r.assertions || []).forEach(function (a) {
+          ul.appendChild(el("li", null, [el("span", { "class": a.ok ? "ok-mark" : "bad-mark", text: a.ok ? "✓ " : "✗ " }),
+            el("span", { "class": "lvl " + a.level, text: a.level }), el("span", { "class": "sec", text: fmtSection("", a.section) }), " ", a.message]));
+        });
+        if (ul.childNodes.length) box.appendChild(ul);
+        var ev = evidence(r, false);
+        if (ev) box.appendChild(ev);
+        detail = el("tr", { "class": "detail" }, [el("td", { colspan: "4" }, [box])]);
+        row.after(detail);
+      });
+      rbody.appendChild(row);
+    });
+    if (!shown) rbody.appendChild(el("tr", null, [el("td", { colspan: "4", "class": "empty", text: "No tests match the filters." })]));
+  }
+  render();
+})();
+</script>
+</body>
+</html>

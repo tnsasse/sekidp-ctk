@@ -1,0 +1,65 @@
+# sekidp-ctk target: a sector IdP (sektoraler IDP) in a gematik test
+# environment (e.g. RU/TU). Copy this file and fill in your values.
+#
+# The test kit acts as a Fachdienst of the TI federation. It needs a test
+# Fachdienst that is registered with the Federation Master of the environment
+# and whose entity statement (with the TLS client certificate and encryption
+# key below) is published at its client_id.
+#
+# ${VAR} references are expanded from the environment; relative paths are
+# resolved against this file's directory.
+
+idp:
+  name: Test-Kasse IDP (RU)
+  entity_id: https://idp-ref.example-kasse.de          # federation entity identifier (issuer)
+  # entity_statement_url: https://idp-ref.example-kasse.de/.well-known/openid-federation
+  # app_link_host: idp-app.example-kasse.de             # host serving assetlinks.json / AASA (default: authorization endpoint host)
+  # ti_ca_file: ti-komp-ca.pem                          # TI component PKI CA (PEM) to verify the ID token x5c chain
+  # signing_cert_role_oid: <OID of oid_idpd_sek>        # required technical role in the ID token signing certificate
+
+# Optional: enables the trust chain checks (GFM-*).
+federation_master:
+  entity_id: https://federationmaster.example         # Federation Master of the environment
+
+fachdienst:
+  client_id: https://fachdienst.example.de             # entity identifier of the test Fachdienst
+  redirect_uri: https://fachdienst.example.de/auth     # registered redirect URI (never contacted)
+  scope: openid urn:telematik:display_name urn:telematik:versicherter
+  unregistered_scope: urn:telematik:geburtsdatum       # supported by the IdP, NOT registered for this Fachdienst (GPR-07)
+  acr_values: gematik-ehealth-loa-high
+  tls_cert: fachdienst-tls.crt                         # self-signed client certificate published in the Fachdienst entity statement
+  tls_key: fachdienst-tls.key
+  enc_key: fachdienst-enc.key                          # private key of the Fachdienst's use=enc key (PEM or JWK)
+  enc_key_id: ${CTK_FD_ENC_KID}                        # its kid in the Fachdienst jwks
+  id_token_version_supported: ["1.0.0", "2.0.0"]       # as announced in the Fachdienst entity statement
+
+# Optional second registered Fachdienst, for the pairwise-subject check (GTK-10).
+# fachdienst_b:
+#   client_id: https://fachdienst-b.example.de
+#   redirect_uri: https://fachdienst-b.example.de/auth
+#   tls_cert: fachdienst-b-tls.crt
+#   tls_key: fachdienst-b-tls.key
+#   enc_key: fachdienst-b-enc.key
+
+# How the test identity logs in at the authorization endpoint. "form" drives
+# HTML forms (for environments with a web login for test identities); each
+# step's form is a CSS selector. Further methods (eGK, eID, SCRAM) can be
+# added as Authenticator implementations.
+login:
+  method: form
+  username: ${CTK_TEST_USER}
+  password: ${CTK_TEST_PASSWORD}
+  steps:
+    - name: login
+      form: "form#login"
+      fields:
+        username: "{{username}}"
+        password: "{{password}}"
+    - name: consent
+      form: "form#consent"
+      submit: accept
+
+# tls:
+#   ca_file: extra-ca.pem          # extra CAs for the test kit's own connections
+#   insecure_skip_verify: false
+timeout: 20s
